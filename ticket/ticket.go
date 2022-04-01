@@ -214,7 +214,7 @@ func GetUnfishedTicket(c *gin.Context) {
 
 }
 
-// UpdateTicket 更新工单(未实现）
+// UpdateTicket
 func UpdateTicket(c *gin.Context) {
 	db, err := OpenDB()
 	if err != nil {
@@ -254,7 +254,7 @@ func UpdateTicket(c *gin.Context) {
 
 }
 
-// DeleteTicket 删除工单（未实现）
+// DeleteTicket
 func DeleteTicket(c *gin.Context) {
 	db, err := OpenDB()
 	if err != nil {
