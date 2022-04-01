@@ -2,20 +2,17 @@ package router
 
 import (
 	"github.com/gin-gonic/gin"
-	"ticket-bot/ecncuser"
-	"ticket-bot/ticket"
+	"ticket-bot-backend/ticket"
 )
 
 func SetupRouters() *gin.Engine {
 	r := gin.Default()
-	r.GET("/login", ecncuser.Login)
 
-	//r.GET("/new", ticket.NewTicket)
-
-	r.POST("/tickets", ticket.BuildTicket)
-	r.GET("/tickets", ticket.ShowTickets)
-	r.GET("/tickets/:ID", ticket.ShowTicket)
-	r.PATCH("/tickets/:ID", ticket.PatchTicket)
-	r.DELETE("/tickets/:ID", ticket.DeleteTicket)
+	r.POST("/tickets/create", ticket.CreateTicket) //crteate a new ticket
+	r.GET("/tickets/show", ticket.ShowAllTickets)  //list all tickets
+	r.GET("/tickets/:id", ticket.ShowTicket)       //list the specified ticket
+	r.GET("/tickets", ticket.GetUnfishedTicket)    //list unfished tickets
+	r.PATCH("/tickets/:id", ticket.UpdateTicket)   //update some information of the tickets
+	r.DELETE("/tickets/:id", ticket.DeleteTicket)  //delete a ticket
 	return r
 }
