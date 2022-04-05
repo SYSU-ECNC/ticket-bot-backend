@@ -1,16 +1,16 @@
 package main
 
-import "ticket-bot/router"
+import "ticket-bot-backend/robot"
 
 func main() {
-	r := router.SetupRouters()
+	//r := router.SetupRouters()
 
 	//err := r.RunTLS(":3000", "localhost.staging.ecnc.link.crt", "localhost.staging.ecnc.link.key")
 	//if err != nil {
 	//	return
 	//}
 
-	r.Run(":3000")
+	//r.Run(":3000")
 
 	//resp, _ := http.Get("https://accounts.ecnc.link/kratos/sessions/whoami")
 	//if resp.StatusCode == 401 {
@@ -18,7 +18,9 @@ func main() {
 	//}
 	//fmt.Println(resp.StatusCode)
 
-	//testid := "test"
-	//robot.NewChat(&testid)
+	testid := "test"
+	unionid := "****"
+	netid := "*****"
+	robot.NewChat(testid, unionid, netid)
 
 }
