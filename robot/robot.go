@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/chyroc/lark"
+	"ticket-bot-backend/ticket"
+	"time"
 )
 
 func RunRobot() *lark.Lark {
@@ -13,46 +15,27 @@ func RunRobot() *lark.Lark {
 	return cli
 }
 
-// NewChat id是工单id，预计后期可以改成ticket
-func NewChat(ID string, unionId string, netid string) {
+// NewChat
+func NewChat(thisticket ticket.Ticket, unionId string, netid string) string {
+	ID := thisticket.BMCID
 	ctx := context.Background()
 	cli := RunRobot()
-	ID = "#" + ID + ":新工单"
+	ID = "#" + ID + ":" + thisticket.Label
 	chatname := &ID
 	resp, _, _ := cli.Chat.CreateChat(ctx, &lark.CreateChatReq{ //群聊名需要以指针形式传入
 		Name: chatname,
 	})
 	//fmt.Println(*resp, err)
-	fmt.Println(fmt.Sprintf("%+v", *resp))
+	fmt.Println("创建群聊", fmt.Sprintf("%+v", *resp))
 
 	idtype := "union_id"
 	idlist := []string{unionId}
-	resp1, _, err1 := cli.Chat.AddChatMember(ctx, &lark.AddChatMemberReq{
+	resp1, _, _ := cli.Chat.AddChatMember(ctx, &lark.AddChatMemberReq{
 		MemberIDType: (*lark.IDType)(&idtype),
 		ChatID:       resp.ChatID,
 		IDList:       idlist,
 	})
-	fmt.Println(resp1, err1)
-
-	//resp2, _, _ := cli.Message.Send().ToChatID(resp.ChatID).SendText(ctx, "信息")
-	//fmt.Println(fmt.Sprintf("%+v", *resp2))
-
-	data := &lark.MessageContentPostAll{ //@创建者
-		ZhCn: &lark.MessageContentPost{
-			Title: ID,
-			Content: [][]lark.MessageContentPostItem{
-				{
-					lark.MessageContentPostText{Text: "你创建了一个新的工单"},
-				},
-				{
-					lark.MessageContentPostAt{UserID: unionId},
-				},
-			},
-		},
-		JaJp: nil,
-		EnUs: nil,
-	}
-	_, _, _ = cli.Message.Send().ToChatID(resp.ChatID).SendPost(ctx, data.String())
+	fmt.Println("拉人", fmt.Sprintf("%+v", *resp1))
 
 	texttag := lark.MessageContentCardObjectTextType("lark_md")
 	card := &lark.MessageContentCard{
@@ -75,11 +58,7 @@ func NewChat(ID string, unionId string, netid string) {
 					{
 						IsShort: true,
 						Text: &lark.MessageContentCardObjectText{
-							Tag: "lark_md",
-							//"is_short": true,
-							//		"text": {
-							//		"content": "**👤 提交人：**\n<at email=test@email.com></at>",
-							//		"tag": "lark_md"
+							Tag:     "lark_md",
 							Content: "创建者：<at id=" + netid + "><at>", //这里@指定用户需要netid
 							Lines:   5,
 						},
@@ -87,35 +66,35 @@ func NewChat(ID string, unionId string, netid string) {
 						IsShort: true,
 						Text: &lark.MessageContentCardObjectText{
 							Tag:     "lark_md",
-							Content: "创建时间：2022/4/5 19:00",
+							Content: "创建时间：" + time.Now().Format("2006-01-02 15:04:05"),
 							Lines:   5,
 						},
 					}, {
 						IsShort: true,
 						Text: &lark.MessageContentCardObjectText{
 							Tag:     "lark_md",
-							Content: "地点：东实验楼A栋404",
+							Content: "地点：" + thisticket.RelatedInf.Client.Department,
 							Lines:   5,
 						},
 					}, {
 						IsShort: true,
 						Text: &lark.MessageContentCardObjectText{
 							Tag:     "lark_md",
-							Content: "联系电话：84036866",
+							Content: "联系电话：" + thisticket.RelatedInf.Client.Phone,
 							Lines:   5,
 						},
 					}, {
 						IsShort: true,
 						Text: &lark.MessageContentCardObjectText{
 							Tag:     "lark_md",
-							Content: "联系人：网络中心",
+							Content: "联系人：" + thisticket.RelatedInf.Client.Name,
 							Lines:   5,
 						},
 					}, {
 						IsShort: false,
 						Text: &lark.MessageContentCardObjectText{
 							Tag:     texttag,
-							Content: "问题描述：写不完了",
+							Content: "问题描述：" + thisticket.RelatedInf.Summary,
 							Lines:   0,
 						},
 					},
@@ -152,12 +131,12 @@ func NewChat(ID string, unionId string, netid string) {
 			},
 		},
 	}
-	resp5, _, err5 := cli.Message.Send().ToChatID(resp.ChatID).SendCard(ctx, card.String())
-	fmt.Println(resp5, err5)
-	FinishTicket(resp.ChatID)
+	resp5, _, _ := cli.Message.Send().ToChatID(resp.ChatID).SendCard(ctx, card.String())
+	fmt.Println("发送工单信息卡片", fmt.Sprintf("%+v", resp5))
+	return resp.ChatID
 }
 
-// FinishTicket 结束工单的卡片 (还需要完善，后期可能需要受派者的netid）
+// FinishTicket 结束工单的卡片
 func FinishTicket(chatid string) {
 	ctx := context.Background()
 	cli := RunRobot()
@@ -186,6 +165,6 @@ func FinishTicket(chatid string) {
 			},
 		},
 	}
-	resp5, _, err5 := cli.Message.Send().ToChatID(chatid).SendCard(ctx, card.String())
-	fmt.Println(resp5, err5)
+	resp5, _, _ := cli.Message.Send().ToChatID(chatid).SendCard(ctx, card.String())
+	fmt.Println("发送结束工单卡片", fmt.Sprintf("%+v", resp5))
 }

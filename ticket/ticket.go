@@ -7,11 +7,9 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
-
-	"net/http"
-	"time"
 )
 
 type Ticket struct {
@@ -32,14 +30,24 @@ type Clients struct {
 	Department string `json:"department"`
 	IDNumber   string `json:"id_number"` //身份证号/护照号
 	Mail       string `json:"mail"`
+	Phone      string `json:"phone"`
 }
 
 type TicketRelated struct {
 	ID          uint    `json:"id"`
 	Client      Clients `gorm:"embedded" json:"client"`
 	FeishuGroup string  `json:"feishuGroup" gorm:"column:feishuGroup"`
-	Chatrecord  string  `json:"chatrecord"`
-	Summary     string  `json:"summary"`
+	Chatrecord  []Messagerecord
+	Summary     string `json:"summary"`
+}
+
+type Messagerecord struct {
+	Unionid    string `json:"union_id"`
+	Userid     string `json:"user_id"`
+	Messageid  string `json:"message_id"`
+	Chatid     string `json:"chat_id"`
+	Context    string `json:"context"`
+	Createtime string `json:"create_time"`
 }
 
 type SimpleTicket struct {
@@ -58,7 +66,7 @@ type DBConfigure struct {
 }
 
 func OpenDB() (*gorm.DB, error) {
-	fileName := "C:\\Users\\peijb\\Desktop\\DBconfigure.json"
+	fileName := "DBconfigure.json"
 	filePtr, err := os.Open(fileName)
 	if err != nil {
 		log.Println("Open file failed!", err.Error())
@@ -80,54 +88,6 @@ func OpenDB() (*gorm.DB, error) {
 		return nil, err
 	}
 	return db, nil
-}
-
-// NewTicket 新建工单()
-//func CreateTicket(c *gin.Context) {
-//	c.JSON(http.StatusOK, gin.H{
-//		"message": "你新建了一个工单",
-//	})
-//}
-
-// BuildTicket 收集工单信息
-func CreateTicket(c *gin.Context) {
-
-	//TicketStatus := c.DefaultPostForm("状态0", "未解决")
-	//TicketFrom := c.DefaultPostForm("来源0", "电话")
-	//TicketLabel := c.DefaultPostForm("标签0", "")
-	//Creator := c.PostForm("创建者") // 必填，后续如果有用户信息可以设为默认
-
-	db, err := OpenDB()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
-		})
-		return
-	}
-
-	var ticket Ticket
-	err = c.BindJSON(&ticket)
-	if err != nil {
-		log.Println("BindJSON Failed", err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err,
-		})
-	}
-
-	ticket.ID = uint(time.Now().Unix())
-	db.AutoMigrate(&Ticket{})
-
-	result := db.Create(&ticket)
-	if result.Error != nil {
-		log.Println("Create Error", result.Error)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": result.Error,
-		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{
-			"ticket": ticket,
-		})
-	}
 }
 
 // ShowTicket 显示指定的工单信息
@@ -184,7 +144,7 @@ func ShowAllTickets(c *gin.Context) {
 
 }
 
-//显示未完成的工单，只显示部分信息
+// GetUnfishedTicket 显示未完成的工单，只显示部分信息
 func GetUnfishedTicket(c *gin.Context) {
 	db, err := OpenDB()
 	if err != nil {
