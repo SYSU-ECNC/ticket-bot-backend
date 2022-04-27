@@ -1,9 +1,10 @@
 package main
 
-import "ticket-bot/router"
+import "ticket-bot-backend/router"
 
 func main() {
 	r := router.SetupRouters()
 
 	r.Run(":3000")
+
 }
